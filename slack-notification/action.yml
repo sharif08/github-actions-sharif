@@ -1,0 +1,22 @@
+name: "Slack notification"
+description: "Notify workflows"
+inputs:
+  slack_channel:
+    description: "Slack channel"
+    required: true
+    default: ""
+  slack_bot_token:
+    description: "Slack bot tokens"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Notify slack fail
+      env:
+        SLACK_BOT_TOKEN: '${{ inputs.slack_bot_token }}'
+      uses: voxmedia/github-action-slack-notify-build@v1
+      with:
+        channel: ${{ inputs.slack_channel }}
+        status: FAILED
+        color: danger

@@ -1,0 +1,58 @@
+name: "SSH via Terraform"
+description: "Update all Helm Charts"
+inputs:
+  ssh_client_ip:
+    description: "SSH Client IP"
+    required: false
+    default: ""
+  ssh_pass:
+    description: "Login ssh password"
+    required: false
+    default: ""
+  ssh_user:
+    description: "Login ssh user"
+    required: false
+    default: ""
+  ssh_port:
+    description: "Login ssh port"
+    required: false
+    default: ""
+  source_file_path:
+    description: "Source Script file with path"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: create main.tf file and run terraform
+      shell: bash
+      run: |
+
+      mkdir -p ssh_exec_dir
+      cat <<EOF > ssh_exec_dir/main.tf
+      resource "null_resource" "prepare" {
+
+      # provide some connection info
+      connection {
+          host        = HOST_NAME
+          type        = "ssh"
+          port        = 22
+          user        = HOST_USER
+          password    = HOST_PASS
+      }
+
+      provisioner "file" {
+         source      = "${{ inputs.source_file_path }}"
+         destination = "/tmp/terraform_ssh_script.sh"
+      }
+
+      provisioner "remote-exec" {
+         inline = ["chmod +x /tmp/terraform_ssh_script.sh", "bash /tmp/terraform_ssh_script.sh"]
+        }
+      }
+      EOF
+      # Run Terraform
+      cd  ssh_exec_dir && terraform init && terraform apply -auto-approve
+      # cd ../ && rm -rf ssh_exec_dir

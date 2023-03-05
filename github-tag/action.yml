@@ -1,0 +1,43 @@
+name: "Create GitHub Tag"
+description: "Creates a GitHub Tag"
+inputs:
+  repo_owner:
+    description: "github repo name"
+    required: true
+    default: ""
+  branch:
+    description: "branch"
+    required: true
+    default: ""
+  repo:
+    description: "github repo name"
+    required: true
+    default: ""
+  tag:
+    description: "tag"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+
+    - name: GitHub Tag Status
+      shell: bash
+      run: |
+
+        # Clone the MicroService Repository
+        git clone git@github.com:${{ inputs.repo_owner }}/${{ inputs.repo }}.git
+        cd ${{ inputs.repo }} && git checkout ${{ inputs.branch }}
+
+        # Check the Tag Exist 
+        if git rev-parse ${{ inputs.tag }} >/dev/null 2>&1
+        then
+
+          echo "Tag Exist ${{ inputs.tag }}"
+          exit 125
+        else
+          git tag ${{ inputs.tag }
+          git push --tags --porcelain
+        fi
+        rm -rf ../${{ inputs.repo }}
+

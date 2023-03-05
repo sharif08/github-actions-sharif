@@ -1,0 +1,56 @@
+name: "Create Pull Request"
+description: "Creates a Pull Request"
+inputs:
+  branch:
+    description: "branch"
+    required: true
+    default: "develop"
+  repo:
+    description: "github repo name"
+    required: true
+    default: ""
+  destination_branch:
+    description: "Input the k8s-gitops destination branch"
+    required: true
+    default: ""
+  destination_chart_name:
+    description: "Input the k8s-gitops destination chart"
+    required: true
+    default: ""
+  pull_request_token:
+    description: "github_token, needed in frontend"
+    required: false
+    default: ""
+  tag:
+    description: "tag"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+
+    - name: create pull request
+      shell: bash
+      run: |
+        REPOSITORY: "k8s-charts-template"
+        DEFAULT_BRANCH: "master"
+        FEATURE_BRANCH: "${{ github.actor }}-Tag-Update-$(date +"%Y-%m-%d"+"%H-%M")"
+        MESSAGE: "${{ github.actor }} Updated tag-${{ inputs.service_tag }}"
+        BODY: "${{ github.actor }} PR for $BRANCH_NAME for ${{ inputs.service_repo }}"
+        BRANCH_NAME=${{ inputs.checkout_branch }}
+        if [ -d "${{ inputs.repo }}" ]; then rm -rf ${{ inputs.repo }}; fi
+
+        #git checkout $BRANCH_NAME
+        #curl -v -H "Authorization: token ${{ inputs.pull_request_token }}" https://api.github.com/repos/REPO_OWNER/${{ inputs.repo }}/pulls \
+        #--data '{"title": "${{ inputs.destination_chart_name }} Auto PR", "body": "Charts get Updated from Template", "head": "'$BRANCH_NAME'", "base": "production"}'
+
+        # clone helm charts repository
+        #if [ -d "${{ inputs.repo }}" ]; then rm -rf ${{ inputs.repo }}; fi
+        #git clone git@github.com:REPO_OWNER/${{ inputs.repo }}.git && cd ${{ inputs.repo }}
+
+        #BRANCH_NAME=AutoUpdate-${{ inputs.destination_chart_name }}-$(date +"%Y-%m-%d")
+
+        #git checkout $BRANCH_NAME
+        #curl -v -H "Authorization: token ${{ inputs.pull_request_token }}" https://api.github.com/repos/REPO_OWNER/${{ inputs.repo }}/pulls \
+        #--data '{"title": "${{ inputs.destination_chart_name }} Auto PR", "body": "Charts get Updated from Template", "head": "'$BRANCH_NAME'", "base": "${{ inputs.branch }}"}'
+

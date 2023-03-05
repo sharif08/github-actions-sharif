@@ -1,0 +1,24 @@
+name: "Cleanup runs"
+description: "cleanup workflows"
+inputs:
+  repo:
+    description: "github repo name"
+    required: true
+    default: ""
+  github_token:
+    description: "github_token"
+    required: false
+    default: ""
+  days:
+    description: "Provide Days"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Delete workflow runs
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        token: ${{ inputs.github_token }}
+        repository: ${{ inputs.repo }}
+        retain_days: ${{ inputs.days }}

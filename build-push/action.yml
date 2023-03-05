@@ -1,0 +1,112 @@
+name: "Create repo tag && docker images"
+description: "Creates a docker image and pushes it to dockerhub"
+inputs:
+  branch:
+    description: "branch"
+    required: true
+    default: "develop"
+  repo:
+    description: "github repo name"
+    required: true
+    default: ""
+  image_name:
+    description: "docker image name"
+    required: true
+    default: ""
+  tag:
+    description: "tag"
+    required: true
+    default: ""
+  no_sgx:
+    description: "flag to enable if this is not an sgx build"
+    required: false
+    default: ""
+  github_token:
+    description: "github_token, needed in frontend"
+    required: false
+    default: ""
+  docker_registry:
+    description: "Login Registry"
+    required: true
+    default: "index.docker.io"
+  ssh_host_user:
+    description: "Cluster Worker Host User"
+    required: true
+    default: "changeme"
+  ssh_host_pass:
+    description: "Cluster Worker Host Pass"
+    required: true
+    default: "changeme"
+  ssh_host:
+    description: "Cluster Worker Host"
+    required: true
+    default: "changeme"
+  no_tag:
+    description: "No tag to create"
+    required: false
+    default: ""
+  no_push:
+    description: "to push or not"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: GitHub Tag Status
+      shell: bash
+      run: |
+
+        if [ "${{ inputs.no_tag }}" = "" ] ; then
+
+          # Clone the MicroService Repository
+          git clone git@github.com:Repo_OWNER/${{ inputs.repo }}.git
+          cd ${{ inputs.repo }} && git checkout ${{ inputs.branch }}
+
+          # Check the Tag Exist 
+          if git rev-parse ${{ inputs.tag }} >/dev/null 2>&1
+          then
+
+            echo "Tag Exist ${{ inputs.tag }}"
+            exit 125
+          else
+            git tag ${{ inputs.tag }}
+            git push --tags --porcelain
+          fi
+          rm -rf ../${{ inputs.repo }}
+
+        fi
+
+    # Iam using Makefile in my repo and calling Makefile from action
+    - name: Build and push docker image
+      env:
+        K8S_TAG: "${{ inputs.tag }}"
+        TAG: "${{ inputs.tag }}"
+        K8S_DOCKER_IMAGE_REGISTRY: "${{ inputs.docker_registry }}"
+        K8S_WORKER_HOST_PASS: "${{ inputs.ssh_host_pass }}"
+        K8S_DEV_CLUSTER_WORKER01_HOST: "${{ inputs.ssh_host }}"
+        K8S_WORKER_HOST_USER: "${{ inputs.ssh_host_user }}"
+        K8S_TAG_TEST: "${{ inputs.tag }}"
+        NPM_TOKEN: ${{ inputs.github_token }}
+      shell: bash
+      run: |
+        # GITHUB_TOKEN: '${{ inputs.github_token }}'
+        # Clone the MicroService Repository
+        git clone git@github.com:Repo_OWNER/${{ inputs.repo }}.git
+        cd ${{ inputs.repo }} && git checkout ${{ inputs.branch }}
+        touch .env
+        git submodule update --init --recursive
+        if ["${{ inputs.image_name }}"  = "Image_name" ] ; then
+           echo "No SSH Agent"
+        else
+           eval `ssh-agent -s`
+           ssh-add
+        fi
+        # Run the Build
+        make docker-rel-k8s -C ./kubernetes/cas-integration
+
+    - name: Push MicorService Image, if it exists
+      shell: bash
+      run: |
+        if [ "${{ inputs.no_push }}" = "" ] ; then
+          docker push Repo_NAME_DOCKER_HUB/${{ inputs.image_name }}:${{ inputs.tag }}
+        fi

@@ -1,0 +1,112 @@
+name: "Create Argocd APP"
+description: "Creates a argocd App"
+inputs:
+  product_instances_path:
+    description: "path of the helm helm charts"
+    required: true
+    default: ""
+  NodeName01:
+    description: "Node Selector01"
+    required: true
+    default: ""
+  NodeName02:
+    description: "Node Selector02"
+    required: true
+    default: ""
+  trustedNodeFendLoadBalancerIP:
+    description: "LB IP"
+    required: true
+    default: ""
+  RabbitMQLoadBalancerIP:
+    description: "LB IP"
+    required: true
+    default: ""
+  trustedNodeFendURL:
+    description: "FrontEnd URL"
+    required: true
+    default: ""
+  NameSpace_to_deploy:
+    description: "NameSpace to deploy"
+    required: true
+    default: ""
+  dev_master_ip:
+    description: "cluster Master IP"
+    required: true
+    default: ""
+  login_user_name:
+    description: "UserName"
+    required: true
+    default: ""
+  login_password:
+    description: "User Password"
+    required: true
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Create ArgoCD App
+      shell: bash
+      run: |
+
+        base_dir=${PWD}
+        # Argocd App Install Template for Development Argocd
+
+        # Step 01
+
+        echo '
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: '${{ inputs.NameSpace_to_deploy }}'
+        spec:
+          # The project the application belongs to.
+          project: default
+
+          # Source of the application manifests
+          # product_instances_path - "path of the instance helm chart location"
+          source:
+            repoURL: Helm_Chart_REPO_INFO
+            targetRevision: HEAD
+            path: '${{ inputs.product_instances_path }}'
+
+          # helm specific config
+          helm:
+            valueFiles:
+            - global-values.yaml
+            - development-values.yaml
+
+          # Extra parameters to set (same as setting through values.yaml, but these take precedence)
+          parameters:
+          - name: resource-quota.enabled
+            value: 'true'
+          - name: global.affinity.enabled
+            value: 'true'
+          - name: global.affinity.NodeName01
+            value: ${{ inputs.NodeName01 }}
+          - name: global.affinity.NodeName02
+            value: ${{ inputs.NodeName02 }}
+
+          # Destination cluster and namespace to deploy the application
+          destination:
+            server: https://kubernetes.default.svc
+            namespace: ${{ inputs.NameSpace_to_deploy }}
+        ' >> $base_dir/${{ inputs.NameSpace_to_deploy }}.yaml
+
+        # Create Aplication inside ArgoCD NameSpace based on provided .yaml from the Step 01
+        echo y | argocd login HOST_NAME --username admin --password HOST_PASS
+
+        argocd app create  test01sharif -f $base_dir/${{ inputs.NameSpace_to_deploy }}.yaml
+
+
+
+
+
+
+
+
+
+
+
+

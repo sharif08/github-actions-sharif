@@ -1,0 +1,31 @@
+name: "Retag image"
+description: "Pulls a docker image, retags it and pushes it to dockerhub"
+inputs:
+  tag_from:
+    description: "tag from"
+    required: true
+    default: ""
+  tag_to:
+    description: "tag to"
+    required: true
+    default: ""
+  image_name:
+    description: "docker image name"
+    required: true
+    default: ""
+  image_repo_name:
+    description: "docker image repo name"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        eval `ssh-agent -s`
+        ssh-add
+        echo "retag of ${{ inputs.image_repo_name }}/${{ inputs.image_name }}"
+        docker pull ${{ inputs.image_repo_name }}/${{ inputs.image_name }}:${{ inputs.tag_from }}
+        docker tag ${{ inputs.image_repo_name }}/${{ inputs.image_name }}:${{ inputs.tag_from }} ${{ inputs.image_repo_name }}/${{ inputs.image_name }}:${{ inputs.tag_to }}
+        docker push ${{ inputs.image_repo_name }}/${{ inputs.image_name }}:${{ inputs.tag_to }}
+

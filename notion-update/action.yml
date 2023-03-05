@@ -1,0 +1,58 @@
+name: "Update NotionPage"
+description: "Update Notion Page"
+inputs:
+  repo_owner:
+    description: "github repo name"
+    required: true
+    default: ""
+  repo:
+    description: "github repo name"
+    required: true
+    default: ""
+  tag:
+    description: "tag"
+    required: true
+    default: ""
+  notion_token:
+    description: "notion page tokens"
+    required: true
+    default: ""
+  notion_path:
+    description: "notion page path"
+    required: true
+    default: ""
+  release_name:
+    description: "Action Release Name"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+
+    - name: Get Commit Hash
+      id: vars
+      shell: bash
+      run: |
+
+        git clone git@github.com:${{ inputs.repo_owner }}/${{ inputs.repo }}.git
+        cd ${{ inputs.repo }} && git checkout ${{ inputs.branch }}
+        echo ::set-output name=DEVELOP_LAST_COMMIT_ID_HASH::$(git log --format="%H" -n 1)
+        rm -rf ../${{ inputs.repo }}
+
+    - name: Update Notion Page
+      shell: bash
+      run: |
+
+        # Run the Notion Update Container          
+        docker run --rm --name notion-update \
+        -e NOTION_TOKEN="${{ inputs.notion_token }}" \
+        -e NOTION_URL="${{ inputs.notion_path }}" \
+        -e K8S_INSTANCE_NAME="${{ inputs.release_name }}" \
+        -e DEVELOPMENT_RELEASE_TAG=${{ inputs.tag }} \
+        -e RERERENCE_TAG=${{ steps.vars.outputs.DEVELOP_LAST_COMMIT_ID_HASH }} \
+        -e MICROSERVICE_NAME=${{ inputs.repo }}  \
+        sharif08/notion_update:1.2
+
+    - name: Docker Logout
+      shell: bash
+      run: docker logout

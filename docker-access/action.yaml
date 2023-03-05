@@ -1,0 +1,37 @@
+name: "Login Docker Demon"
+description: "Access the DockerHub or Private Registery"
+inputs:
+  docker_user:
+    description: "docker user"
+    required: true
+    default: "botrnc"
+  docker_registry:
+    description: "Login Registry"
+    required: true
+    default: "index.docker.io"
+  docker_token:
+    description: "docker pass"
+    required: false
+    default: ""
+  local_registry:
+    description: "flag to enable if this is Privat Registry"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Login DockerHUB
+      shell: bash
+      run: |
+
+        # Docker Login To Docker Hub
+        echo "${{ inputs.docker_token }}" | docker login -u "${{ inputs.docker_user }}" --password-stdin
+
+#     - name: Login to Private Registry
+#       shell: bash
+#       run: |
+
+#         # Docker Login To Docker Private Registry
+#         if [ "${{ inputs.local_registry }}" = "" ] ; then
+#           echo  "${{ inputs.docker_token }}" | docker login --username ${{ inputs.docker_user }} --password-stdin  ${{ env.Docker_Private_URL }}
+#         fi
